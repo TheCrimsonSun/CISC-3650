@@ -1,0 +1,15 @@
+.form-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.form-row label {
+  width: 120px;
+  margin: 0;
+}
+
+.form-row input {
+  flex: 1;
+}
