@@ -1,4 +1,5 @@
 
+
 var rownumber = 3
 
 
@@ -11,6 +12,7 @@ function Delete() {
     x.deleteRow(index);
     renumberRows(x);
     rownumber = x.rows.length - 1;
+    updateGroupIfNeeded();
   }
 }
 
@@ -54,13 +56,49 @@ function Add() {
   cell6.innerHTML = `<form>
                   <label for="rating">Rating</label>
                   <select name="rating" id="rating">
-                    <option value="1">1 Star</option>
-                    <option value="2">2 Stars</option>
-                    <option value="3">3 Stars</option>
-                    <option value="4">4 Stars</option>
-                    <option value="5">5 Stars</option>
+                    <option value="0">—</option>
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                    <option value="5">5</option>
                   </select>
                 </form>`;
+  // Store data attributes on row for grouping
+  row.dataset.author = author;
+  row.dataset.rating = '0';
+  
+  // Fetch and add cover image from Open Library
+  fetchOpenLibraryCover(title, author, function(coverUrl) {
+    if (coverUrl) {
+      var titleCell = cell2;
+      var img = document.createElement('img');
+      img.src = coverUrl;
+      img.alt = title;
+      img.style.maxWidth = '80px';
+      img.style.marginTop = '6px';
+      img.style.display = 'block';
+      titleCell.appendChild(document.createElement('br'));
+      titleCell.appendChild(img);
+    }
+  });
+  
+  // Attach event listener for status change to show celebration
+  var statusSelect = cell5.querySelector('select');
+  if (statusSelect) {
+    statusSelect.addEventListener('change', function(e) {
+      if (e.target.value === 'finished') showCelebration();
+    });
+  }
+  
+  // Attach event listener for rating change
+  var ratingSelect = cell6.querySelector('select');
+  if (ratingSelect) {
+    ratingSelect.addEventListener('change', function(e) {
+      row.dataset.rating = e.target.value;
+      updateGroupIfNeeded();
+    });
+  }
 }
 
 function updateAddButtonState() { 
@@ -91,9 +129,47 @@ document.addEventListener('DOMContentLoaded', function() {
   var clearBtn = document.getElementById('clearSearch');
   if (searchEl) searchEl.addEventListener('input', Search);
   if (clearBtn) clearBtn.addEventListener('click', function() { if (searchEl) { searchEl.value = ''; Search(); searchEl.focus(); } });
+  
+  // Sort wiring
+  var sortEl = document.getElementById('sortSelect');
+  if (sortEl) sortEl.addEventListener('change', function() { sortTableBy(sortEl.value); });
+  
+  // Group wiring
+  var groupBtn = document.getElementById('groupAuthor');
+  var clearGroupBtn = document.getElementById('clearGroup');
+  if (groupBtn) groupBtn.addEventListener('click', groupByAuthor);
+  if (clearGroupBtn) clearGroupBtn.addEventListener('click', function() { document.getElementById('groupSummary').innerHTML = ''; });
+  
+  // Attach status/rating listeners to existing rows
+  initializeExistingRows();
 });
 
-
+function initializeExistingRows() {
+  var table = document.getElementById('myTable');
+  for (var i = 1; i < table.rows.length; i++) {
+    var row = table.rows[i];
+    if (row.cells.length > 0) {
+      var author = row.cells[2] ? row.cells[2].textContent.trim() : '';
+      row.dataset.author = author;
+      row.dataset.rating = '0';
+      
+      var statusForm = row.cells[4] ? row.cells[4].querySelector('select') : null;
+      if (statusForm) {
+        statusForm.addEventListener('change', function(e) {
+          if (e.target.value === 'finished') showCelebration();
+        });
+      }
+      
+      var ratingForm = row.cells[5] ? row.cells[5].querySelector('select') : null;
+      if (ratingForm) {
+        ratingForm.addEventListener('change', function(e) {
+          row.dataset.rating = e.target.value;
+          updateGroupIfNeeded();
+        });
+      }
+    }
+  }
+}
 
 function Search() {
   var term = (document.getElementById('searchInput') || { value: '' }).value.trim().toLowerCase();
@@ -110,4 +186,133 @@ function Search() {
     row.style.display = match ? '' : 'none';
   }
 }
+
+function sortTableBy(key) {
+  if (!key) return;
+  var table = document.getElementById('myTable');
+  var rows = [];
+  for (var i = 1; i < table.rows.length; i++) {
+    rows.push(table.rows[i]);
+  }
+  
+  rows.sort(function(a, b) {
+    var aVal, bVal;
+    if (key === 'title') {
+      aVal = (a.cells[1] ? a.cells[1].textContent.trim().toLowerCase() : '');
+      bVal = (b.cells[1] ? b.cells[1].textContent.trim().toLowerCase() : '');
+    } else if (key === 'author') {
+      aVal = (a.cells[2] ? a.cells[2].textContent.trim().toLowerCase() : '');
+      bVal = (b.cells[2] ? b.cells[2].textContent.trim().toLowerCase() : '');
+    } else if (key === 'genre') {
+      aVal = (a.cells[3] ? a.cells[3].textContent.trim().toLowerCase() : '');
+      bVal = (b.cells[3] ? b.cells[3].textContent.trim().toLowerCase() : '');
+    } else if (key === 'status') {
+      var aSelect = a.cells[4] ? a.cells[4].querySelector('select') : null;
+      var bSelect = b.cells[4] ? b.cells[4].querySelector('select') : null;
+      aVal = (aSelect ? aSelect.value : '');
+      bVal = (bSelect ? bSelect.value : '');
+    }
+    return aVal.localeCompare(bVal);
+  });
+  
+  for (var j = 0; j < rows.length; j++) {
+    table.appendChild(rows[j]);
+  }
+  renumberRows(table);
+}
+
+function showCelebration() {
+  var el = document.getElementById('celebration');
+  if (!el) return;
+  el.style.display = '';
+  playTone();
+  setTimeout(function() { el.style.display = 'none'; }, 2500);
+}
+
+function playTone() {
+  try {
+    var ctx = new (window.AudioContext || window.webkitAudioContext)();
+    var o = ctx.createOscillator();
+    var g = ctx.createGain();
+    o.type = 'sine';
+    o.frequency.value = 880;
+    o.connect(g);
+    g.connect(ctx.destination);
+    g.gain.setValueAtTime(0.0001, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.1, ctx.currentTime + 0.01);
+    o.start();
+    setTimeout(function() {
+      g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.1);
+      o.stop(ctx.currentTime + 0.12);
+    }, 200);
+  } catch(e) { /* ignore */ }
+}
+
+function groupByAuthor() {
+  var table = document.getElementById('myTable');
+  var groups = {};
+  
+  for (var i = 1; i < table.rows.length; i++) {
+    var row = table.rows[i];
+    var author = row.cells[2] ? row.cells[2].textContent.trim() : 'Unknown';
+    var ratingSelect = row.cells[5] ? row.cells[5].querySelector('select') : null;
+    var rating = ratingSelect ? parseInt(ratingSelect.value || '0', 10) : 0;
+    
+    if (!groups[author]) {
+      groups[author] = { count: 0, sum: 0, total: 0 };
+    }
+    groups[author].total++;
+    if (rating > 0) {
+      groups[author].sum += rating;
+      groups[author].count++;
+    }
+  }
+  
+  var summaryDiv = document.getElementById('groupSummary');
+  summaryDiv.innerHTML = '';
+  
+  Object.keys(groups).forEach(function(author) {
+    var g = groups[author];
+    var avg = g.count > 0 ? (g.sum / g.count).toFixed(2) : '—';
+    var line = document.createElement('div');
+    line.textContent = author + ' — Average Rating: ' + avg + ' (' + g.total + ' books)';
+    line.style.marginBottom = '8px';
+    summaryDiv.appendChild(line);
+  });
+}
+
+function updateGroupIfNeeded() {
+  var summaryDiv = document.getElementById('groupSummary');
+  if (summaryDiv && summaryDiv.innerHTML.trim() !== '') {
+    groupByAuthor();
+  }
+}
+
+function fetchOpenLibraryCover(title, author, callback) {
+  try {
+    var q = [];
+    if (title) q.push('title=' + encodeURIComponent(title));
+    if (author) q.push('author=' + encodeURIComponent(author));
+    var url = 'https://openlibrary.org/search.json?' + q.join('&');
+    
+    fetch(url)
+      .then(function(resp) { return resp.json(); })
+      .then(function(data) {
+        if (data && data.docs && data.docs.length > 0) {
+          var doc = data.docs[0];
+          if (doc.cover_i) {
+            callback('https://covers.openlibrary.org/b/id/' + doc.cover_i + '-M.jpg');
+          } else {
+            callback(null);
+          }
+        } else {
+          callback(null);
+        }
+      })
+      .catch(function(e) { callback(null); });
+  } catch(e) { 
+    callback(null); 
+  }
+}
+
 
