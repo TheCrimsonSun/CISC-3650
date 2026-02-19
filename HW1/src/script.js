@@ -75,7 +75,7 @@ function Add() {
       var img = document.createElement('img');
       img.src = coverUrl;
       img.alt = title;
-      img.style.maxWidth = '80px';
+      img.style.maxWidth = '200px';
       img.style.marginTop = '6px';
       img.style.display = 'block';
       titleCell.appendChild(document.createElement('br'));
