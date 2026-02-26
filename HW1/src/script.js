@@ -1,15 +1,17 @@
 var rownumber = 3
 
 function Delete() {
-  var x = document.getElementById("myTable");
-  var index = parseInt(document.getElementById("myText").value, 10);
-  if (isNaN(index)) return;
-  // Prevent deleting header (row 0) and check bounds
-  if (index > 0 && index < x.rows.length) {
-    x.deleteRow(index);
-    renumberRows(x);
-    rownumber = x.rows.length - 1;
-    updateGroupIfNeeded();
+  if (confirm("Are you sure you want to delete this book? This cannot be undone")) {
+    var x = document.getElementById("myTable");
+    var index = parseInt(document.getElementById("myText").value, 10);
+    if (isNaN(index)) return;
+    // Prevent deleting header (row 0) and check bounds
+    if (index > 0 && index < x.rows.length) {
+      x.deleteRow(index);
+      renumberRows(x);
+      rownumber = x.rows.length - 1;
+      updateGroupIfNeeded();
+    }
   }
 }
 
@@ -87,20 +89,11 @@ function Add() {
       if (e.target.value === 'finished') showCelebration();
     });
   }
-  
-  // Attach event listener for rating change
-  var ratingSelect = cell6.querySelector('select');
-  if (ratingSelect) {
-    ratingSelect.addEventListener('change', function(e) {
-      row.dataset.rating = e.target.value;
-      updateGroupIfNeeded();
-    });
-  }
 }
 
 function updateAddButtonState() { 
   //essenially works the same way as delete index
-  // grabs from mthe input fields
+  // grabs from the input fields
   var titleEl = document.getElementById('titleInput');
   var genreEl = document.getElementById('genreInput');
   var authorEl = document.getElementById('authorInput');
@@ -122,6 +115,7 @@ document.addEventListener('DOMContentLoaded', function() {
   if (authorEl) authorEl.addEventListener('input', updateAddButtonState);
   // initialize state
   updateAddButtonState();
+  
   // Search wiring
   var searchEl = document.getElementById('searchInput');
   var clearBtn = document.getElementById('clearSearch');
@@ -131,12 +125,6 @@ document.addEventListener('DOMContentLoaded', function() {
   // Sort wiring
   var sortEl = document.getElementById('sortSelect');
   if (sortEl) sortEl.addEventListener('change', function() { sortTableBy(sortEl.value); });
-  
-  // Group wiring
-  var groupBtn = document.getElementById('groupAuthor');
-  var clearGroupBtn = document.getElementById('clearGroup');
-  if (groupBtn) groupBtn.addEventListener('click', groupByAuthor);
-  if (clearGroupBtn) clearGroupBtn.addEventListener('click', function() { document.getElementById('groupSummary').innerHTML = ''; });
   
   // Attach status/rating listeners to existing rows
   initializeExistingRows();
@@ -155,14 +143,6 @@ function initializeExistingRows() {
       if (statusForm) {
         statusForm.addEventListener('change', function(e) {
           if (e.target.value === 'finished') showCelebration();
-        });
-      }
-      
-      var ratingForm = row.cells[5] ? row.cells[5].querySelector('select') : null;
-      if (ratingForm) {
-        ratingForm.addEventListener('change', function(e) {
-          row.dataset.rating = e.target.value;
-          updateGroupIfNeeded();
         });
       }
     }
