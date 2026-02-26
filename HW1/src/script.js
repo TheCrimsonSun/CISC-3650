@@ -75,7 +75,7 @@ function Add() {
       var img = document.createElement('img');
       img.src = coverUrl;
       img.alt = title;
-      img.style.maxWidth = '4000px';
+      img.style.maxWidth = '200px';
       img.style.marginTop = '2px';
       img.style.display = 'block';
       titleCell.appendChild(document.createElement('br'));
@@ -109,7 +109,7 @@ function updateAddButtonState() {
   var authorEl = document.getElementById('authorInput');
   var addBtn = document.getElementById('addButton');
   if (!addBtn) return;
-  //check to see if its empty so to not allow empty sltos
+  //check to see if its empty so to not allow empty slots
   var ok = titleEl && genreEl && authorEl && titleEl.value.trim() !== '' && genreEl.value.trim() !== '' && authorEl.value.trim() !== '';
   addBtn.disabled = !ok;
 }
@@ -119,6 +119,7 @@ document.addEventListener('DOMContentLoaded', function() {
   var titleEl = document.getElementById('titleInput');
   var genreEl = document.getElementById('genreInput');
   var authorEl = document.getElementById('authorInput');
+  // sees if input is not empty and tells the button it isnt empty
   if (titleEl) titleEl.addEventListener('input', updateAddButtonState);
   if (genreEl) genreEl.addEventListener('input', updateAddButtonState);
   if (authorEl) authorEl.addEventListener('input', updateAddButtonState);
@@ -225,27 +226,7 @@ function showCelebration() {
   var el = document.getElementById('celebration');
   if (!el) return;
   el.style.display = '';
-  playTone();
   setTimeout(function() { el.style.display = 'none'; }, 2500);
-}
-
-function playTone() {
-  try {
-    var ctx = new (window.AudioContext || window.webkitAudioContext)();
-    var o = ctx.createOscillator();
-    var g = ctx.createGain();
-    o.type = 'sine';
-    o.frequency.value = 880;
-    o.connect(g);
-    g.connect(ctx.destination);
-    g.gain.setValueAtTime(0.0001, ctx.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.1, ctx.currentTime + 0.01);
-    o.start();
-    setTimeout(function() {
-      g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.1);
-      o.stop(ctx.currentTime + 0.12);
-    }, 200);
-  } catch(e) { /* ignore */ }
 }
 
 function groupByAuthor() {
@@ -301,7 +282,7 @@ function fetchOpenLibraryCover(title, author, callback) {
         if (data && data.docs && data.docs.length > 0) {
           var doc = data.docs[0];
           if (doc.cover_i) {
-            callback('https://covers.openlibrary.org/b/id/' + doc.cover_i + '-M.jpg');
+            callback('https://covers.openlibrary.org/b/id/' + doc.cover_i + '-L.jpg');
           } else {
             callback(null);
           }
