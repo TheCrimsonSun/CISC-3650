@@ -1,7 +1,4 @@
-
-
 var rownumber = 3
-
 
 function Delete() {
   var x = document.getElementById("myTable");
